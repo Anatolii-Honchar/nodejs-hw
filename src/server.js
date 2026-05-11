@@ -1,33 +1,26 @@
 import express from 'express';
-import dotenv from 'dotenv';
 import cors from 'cors';
-import pinoHttp from 'pino-http';
-
-dotenv.config();
+import helmet from 'helmet';
+import pino from 'pino-http';
+import 'dotenv/config.js';
+import { connectMongoDB } from './db/connectMongoDB.js';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-/**
- * Logger middleware
- */
+app.use(cors());
+app.use(helmet());
+app.use(express.json());
+
+/** Logger middleware */
 app.use(
-  pinoHttp({
+  pino({
     transport: {
       target: 'pino-pretty',
     },
   }),
 );
 
-/**
- * Core middleware
- */
-app.use(cors());
-app.use(express.json());
-
-/**
- * Routes
- */
+/** Routes */
 
 // GET /notes
 app.get('/notes', (req, res) => {
@@ -59,18 +52,17 @@ app.use((req, res) => {
   });
 });
 
-/**
- * Error handling middleware (500)
- */
+/** Error handling middleware (500) */
 app.use((err, req, res, next) => {
+  const isProd = process.env.NODE_ENV === 'production';
   res.status(500).json({
-    message: err.message,
+    message: isProd ? 'Internal Server Error' : err.stack,
   });
 });
 
-/**
- * Start server
- */
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+await connectMongoDB();
+
+/** Start server */
+app.listen(process.env.PORT, () => {
+  console.log(`Server is running on port ${process.env.PORT}`);
 });
