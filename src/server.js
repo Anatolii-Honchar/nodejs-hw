@@ -1,68 +1,47 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import pino from 'pino-http';
-import 'dotenv/config.js';
+import 'dotenv/config';
 import { connectMongoDB } from './db/connectMongoDB.js';
 
+import { logger } from './middleware/logger.js';
+import { notFoundHandler } from './middleware/notFoundHandler.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import notesRoutes from './routes/notesRoutes.js';
+
 const app = express();
+const PORT = Number(process.env.PORT) || 3000;
 
-app.use(cors());
-app.use(helmet());
-app.use(express.json());
+// Request logging middleware (logs all incoming requests)
+app.use(logger);
 
-/** Logger middleware */
+// Parse incoming JSON requests with size and content-type ограничения
 app.use(
-  pino({
-    transport: {
-      target: 'pino-pretty',
-    },
+  express.json({
+    type: ['application/json', 'application/vnd.api+json'],
+    limit: '100kb', // prevent large payload attacks
   }),
 );
 
-/** Routes */
+// Enable Cross-Origin Resource Sharing
+app.use(cors());
 
-// GET /notes
-app.get('/notes', (req, res) => {
-  res.status(200).json({
-    message: 'Retrieved all notes',
-  });
-});
+// Add basic security HTTP headers
+app.use(helmet());
 
-// GET /notes/:noteId
-app.get('/notes/:noteId', (req, res) => {
-  const { noteId } = req.params;
+// Register application routes for notes API
+app.use(notesRoutes);
 
-  res.status(200).json({
-    message: `Retrieved note with ID: ${noteId}`,
-  });
-});
+// Handle requests to unknown routes (404)
+app.use(notFoundHandler);
 
-// GET /test-error (імітація помилки)
-app.get('/test-error', () => {
-  throw new Error('Simulated server error');
-});
+// Global error handler (must be last middleware)
+app.use(errorHandler);
 
-/**
- * 404 middleware (неіснуючі маршрути)
- */
-app.use((req, res) => {
-  res.status(404).json({
-    message: 'Route not found',
-  });
-});
-
-/** Error handling middleware (500) */
-app.use((err, req, res, next) => {
-  const isProd = process.env.NODE_ENV === 'production';
-  res.status(500).json({
-    message: isProd ? 'Internal Server Error' : err.stack,
-  });
-});
-
+// Connect to MongoDB before starting the server
 await connectMongoDB();
 
-/** Start server */
-app.listen(process.env.PORT, () => {
-  console.log(`Server is running on port ${process.env.PORT}`);
+// Start HTTP server
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
