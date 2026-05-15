@@ -8,6 +8,7 @@ import { logger } from './middleware/logger.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import notesRoutes from './routes/notesRoutes.js';
+import { errors } from 'celebrate';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -15,7 +16,7 @@ const PORT = Number(process.env.PORT) || 3000;
 // Request logging middleware (logs all incoming requests)
 app.use(logger);
 
-// Parse incoming JSON requests with size and content-type ограничения
+// Parse incoming JSON requests with size and content-type limits to prevent abuse and ensure correct handling
 app.use(
   express.json({
     type: ['application/json', 'application/vnd.api+json'],
@@ -34,6 +35,9 @@ app.use(notesRoutes);
 
 // Handle requests to unknown routes (404)
 app.use(notFoundHandler);
+
+// Celebrate validation error handler (must be before global error handler)
+app.use(errors());
 
 // Global error handler (must be last middleware)
 app.use(errorHandler);
