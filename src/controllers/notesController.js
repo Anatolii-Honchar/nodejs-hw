@@ -3,11 +3,38 @@ import createHttpError from 'http-errors';
 
 // Get all notes
 export const getAllNotes = async (req, res) => {
-  // Find all documents in MongoDB
-  const notes = await Note.find();
+  // Read pagination params from query string
+  const { page = 1, perPage = 10, tag, search } = req.query;
 
-  // Send response with notes
-  res.status(200).json(notes);
+  // Calculate how many documents should be skipped for the current page
+  const skip = (page - 1) * perPage;
+
+  const notesQuery = Note.find();
+
+  if (search) {
+    notesQuery.find({ $text: { $search: search } });
+  }
+
+  if (tag) {
+    notesQuery.where('tag').equals(tag);
+  }
+
+  // Run count and paginated fetch in parallel; clone() is needed because the same query is reused twice
+  const [totalNotes, notes] = await Promise.all([
+    notesQuery.clone().countDocuments(),
+    notesQuery.skip(skip).limit(perPage),
+  ]);
+
+  // Calculate total amount of pages based on all notes and page size
+  const totalPages = Math.ceil(totalNotes / perPage);
+
+  res.status(200).json({
+    page,
+    perPage,
+    totalNotes,
+    totalPages,
+    notes,
+  });
 };
 
 // Get one note by ID
