@@ -31,5 +31,9 @@ noteSchema.index({
   content: 'text',
 });
 
+noteSchema.index({
+  tag: 1,
+});
+
 // Create and export Note model
 export const Note = model('Note', noteSchema);
