@@ -7,6 +7,7 @@ import { connectMongoDB } from './db/connectMongoDB.js';
 import { logger } from './middleware/logger.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import authRoutes from './routes/authRoutes.js';
 import notesRoutes from './routes/notesRoutes.js';
 import { errors } from 'celebrate';
 
@@ -24,6 +25,24 @@ app.use(
   }),
 );
 
+app.use((req, res, next) => {
+  const cookieHeader = req.headers.cookie;
+  req.cookies = {};
+
+  if (!cookieHeader) {
+    return next();
+  }
+
+  const cookies = cookieHeader.split(';');
+
+  for (const cookie of cookies) {
+    const [name, ...valueParts] = cookie.trim().split('=');
+    req.cookies[name] = decodeURIComponent(valueParts.join('='));
+  }
+
+  next();
+});
+
 // Enable Cross-Origin Resource Sharing
 app.use(cors());
 
@@ -31,6 +50,7 @@ app.use(cors());
 app.use(helmet());
 
 // Register application routes for notes API
+app.use(authRoutes);
 app.use(notesRoutes);
 
 // Handle requests to unknown routes (404)

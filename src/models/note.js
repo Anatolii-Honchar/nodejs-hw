@@ -4,6 +4,11 @@ import { TAGS } from '../constants/tags.js';
 // Define schema for a note document
 const noteSchema = new Schema(
   {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
     title: {
       type: String,
       required: true, // title is mandatory
@@ -22,7 +27,6 @@ const noteSchema = new Schema(
   },
   {
     timestamps: true, // adds createdAt and updatedAt fields
-    versionKey: false, // disable __v version key
   },
 );
 

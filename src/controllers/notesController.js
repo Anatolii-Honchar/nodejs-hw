@@ -5,11 +5,12 @@ import createHttpError from 'http-errors';
 export const getAllNotes = async (req, res) => {
   // Read pagination params from query string
   const { page = 1, perPage = 10, tag, search } = req.query;
+  const userId = req.user._id;
 
   // Calculate how many documents should be skipped for the current page
   const skip = (page - 1) * perPage;
 
-  const notesQuery = Note.find();
+  const notesQuery = Note.find({ userId });
 
   if (search) {
     notesQuery.find({ $text: { $search: search } });
@@ -41,9 +42,13 @@ export const getAllNotes = async (req, res) => {
 export const getNoteById = async (req, res) => {
   // Get note ID from URL params
   const { noteId } = req.params;
+  const userId = req.user._id;
 
   // Find note by MongoDB _id
-  const note = await Note.findById(noteId);
+  const note = await Note.findOne({
+    _id: noteId,
+    userId,
+  });
 
   // If note does not exist -> 404 error
   if (!note) {
@@ -58,10 +63,12 @@ export const getNoteById = async (req, res) => {
 export const deleteNote = async (req, res) => {
   // Get ID from params
   const { noteId } = req.params;
+  const userId = req.user._id;
 
   // Find and delete note
   const note = await Note.findOneAndDelete({
     _id: noteId,
+    userId,
   });
 
   // If note not found
@@ -77,10 +84,11 @@ export const deleteNote = async (req, res) => {
 export const updateNote = async (req, res) => {
   // Get ID from params
   const { noteId } = req.params;
+  const userId = req.user._id;
 
   // Find note and update with req.body data
   const note = await Note.findOneAndUpdate(
-    { _id: noteId },
+    { _id: noteId, userId },
 
     // New data from client
     req.body,
@@ -100,8 +108,13 @@ export const updateNote = async (req, res) => {
 
 // Create new note
 export const createNote = async (req, res) => {
+  const userId = req.user._id;
+
   // Create document using request body
-  const note = await Note.create(req.body);
+  const note = await Note.create({
+    ...req.body,
+    userId,
+  });
 
   // 201 = Created
   res.status(201).json(note);
