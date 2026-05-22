@@ -47,9 +47,21 @@ export const logoutUser = async (req, res) => {
     await Session.deleteOne({ _id: req.cookies.sessionId });
   }
 
-  res.clearCookie('accessToken');
-  res.clearCookie('refreshToken');
-  res.clearCookie('sessionId');
+  res.clearCookie('accessToken', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+  });
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+  });
+  res.clearCookie('sessionId', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+  });
 
   res.status(204).send();
 };

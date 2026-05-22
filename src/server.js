@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import 'dotenv/config';
 import { connectMongoDB } from './db/connectMongoDB.js';
 
@@ -25,26 +26,10 @@ app.use(
   }),
 );
 
-app.use((req, res, next) => {
-  const cookieHeader = req.headers.cookie;
-  req.cookies = {};
-
-  if (!cookieHeader) {
-    return next();
-  }
-
-  const cookies = cookieHeader.split(';');
-
-  for (const cookie of cookies) {
-    const [name, ...valueParts] = cookie.trim().split('=');
-    req.cookies[name] = decodeURIComponent(valueParts.join('='));
-  }
-
-  next();
-});
+app.use(cookieParser());
 
 // Enable Cross-Origin Resource Sharing
-app.use(cors());
+app.use(cors({ credentials: true }));
 
 // Add basic security HTTP headers
 app.use(helmet());

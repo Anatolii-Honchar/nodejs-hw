@@ -41,5 +41,4 @@ export const updateNoteSchema = {
   [Segments.PARAMS]: Joi.object({
     noteId: Joi.string().custom(validateObjectId).required(),
   }),
-  // ...noteIdSchema,
 };
