@@ -4,16 +4,23 @@ import createHttpError from 'http-errors';
 // Get all notes
 export const getAllNotes = async (req, res) => {
   // Read pagination params from query string
-  const { page = 1, perPage = 10, tag, search } = req.query;
+  const { page, perPage, tag, search } = req.query;
   const userId = req.user._id;
+  const currentPage = page || 1;
+  const currentPerPage = perPage || 10;
 
   // Calculate how many documents should be skipped for the current page
-  const skip = (page - 1) * perPage;
+  const skip = (currentPage - 1) * currentPerPage;
 
   const notesQuery = Note.find({ userId });
 
   if (search) {
-    notesQuery.find({ $text: { $search: search } });
+    notesQuery.find({
+      $or: [
+        { title: { $regex: search, $options: 'i' } },
+        { content: { $regex: search, $options: 'i' } },
+      ],
+    });
   }
 
   if (tag) {
@@ -23,15 +30,15 @@ export const getAllNotes = async (req, res) => {
   // Run count and paginated fetch in parallel; clone() is needed because the same query is reused twice
   const [totalNotes, notes] = await Promise.all([
     notesQuery.clone().countDocuments(),
-    notesQuery.skip(skip).limit(perPage),
+    notesQuery.skip(skip).limit(currentPerPage),
   ]);
 
   // Calculate total amount of pages based on all notes and page size
-  const totalPages = Math.ceil(totalNotes / perPage);
+  const totalPages = Math.ceil(totalNotes / currentPerPage);
 
   res.status(200).json({
-    page,
-    perPage,
+    page: currentPage,
+    perPage: currentPerPage,
     totalNotes,
     totalPages,
     notes,

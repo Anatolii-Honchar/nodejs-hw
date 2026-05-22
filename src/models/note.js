@@ -31,12 +31,8 @@ const noteSchema = new Schema(
 );
 
 noteSchema.index({
-  title: 'text',
-  content: 'text',
-});
-
-noteSchema.index({
   tag: 1,
+  userId: 1,
 });
 
 // Create and export Note model
