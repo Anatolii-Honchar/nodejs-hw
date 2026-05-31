@@ -10,6 +10,7 @@ import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import authRoutes from './routes/authRoutes.js';
 import notesRoutes from './routes/notesRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 import { errors } from 'celebrate';
 
 const app = express();
@@ -36,6 +37,7 @@ app.use(helmet());
 
 // Register application routes for notes API
 app.use(authRoutes);
+app.use(userRoutes);
 app.use(notesRoutes);
 
 // Handle requests to unknown routes (404)
